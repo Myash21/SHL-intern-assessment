@@ -13,7 +13,7 @@ ASSESSMENT_DATA_PATH = "embedding_index/assessments.json"
 
 @st.cache_resource
 def load_model():
-    return SentenceTransformer("all-MiniLM-L6-v2")
+    return SentenceTransformer("./all-MiniLM-L6-v2")
 
 @st.cache_resource
 def load_index():

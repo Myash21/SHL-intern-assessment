@@ -15,7 +15,7 @@ texts = [
 ]
 
 # Load SentenceTransformer model
-model = SentenceTransformer("all-MiniLM-L6-v2")
+model = SentenceTransformer("./all-MiniLM-L6-v2")
 embeddings = model.encode(texts, show_progress_bar=True)
 
 # Convert to numpy array
