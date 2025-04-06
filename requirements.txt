@@ -3,3 +3,7 @@ requests
 beautifulsoup4
 selenium
 webdriver-manager
+faiss-cpu
+sentence-transformers
+numpy
+accelerate
