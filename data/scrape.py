@@ -135,6 +135,89 @@ def scrape_shl_table_data_selenium(catalog_url):
 
     return assessments_data
 
+def scrape_second_table():
+    driver = setup_driver()
+    if not driver:
+        return []
+
+    results = []
+    page_offset = 0
+    items_per_page = 12  # SHL seems to paginate in 12s
+    base_table_url = f"{BASE_URL}/solutions/products/product-catalog/?start={page_offset}&type=1"
+
+    while True:
+        url = f"{BASE_URL}/solutions/products/product-catalog/?start={page_offset}&type=1"
+        print(f"Visiting: {url}")
+        driver.get(url)
+        time.sleep(2)
+
+        # Parse table content
+        soup = BeautifulSoup(driver.page_source, "html.parser")
+        rows = soup.select('div.custom__table-responsive tr[data-entity-id], div.custom__table-responsive tr[data-course-id]')
+        print(f"Found {len(rows)} rows on this page.")
+
+        if not rows:
+            break  # Stop if no new rows found
+
+        for i, row in enumerate(rows):
+            # Same row extraction logic as before
+            cells = row.find_all('td')
+            if len(cells) < 4:
+                continue
+
+            data = {
+                "Assessment Name": "N/A",
+                "Assessment URL": None,
+                "Remote Testing Support": "No",
+                "Adaptive/IRT Support": "No",
+                "Duration": "N/A",
+                "Test Type": "N/A"
+            }
+
+            try:
+                name_cell = cells[0]
+                link_tag = name_cell.find('a')
+                if link_tag:
+                    data["Assessment Name"] = link_tag.get_text(strip=True)
+                    href = link_tag.get("href", "")
+                    data["Assessment URL"] = BASE_URL + href if href.startswith('/') else href
+
+                if cells[1].find('span', class_='catalogue__circle'):
+                    data["Remote Testing Support"] = "Yes"
+
+                if cells[2].find('span', class_='catalogue__circle'):
+                    data["Adaptive/IRT Support"] = "Yes"
+
+                key_spans = cells[3].find_all('span', class_='product-catalogue__key')
+                keys = [span.get_text(strip=True) for span in key_spans]
+                data["Test Type"] = "".join(keys) if keys else cells[3].get_text(strip=True)
+
+                if data["Assessment Name"] != "N/A":
+                    results.append(data)
+
+            except Exception as e:
+                print(f"Error processing row {i+1}: {e}")
+                continue
+
+        # Check for next page by checking presence of updated next link
+        try:
+            next_li = driver.find_element(By.CSS_SELECTOR, "li.pagination__item.-next")
+            next_link = next_li.find_element(By.CSS_SELECTOR, "a.pagination__arrow")
+            next_href = next_link.get_attribute("href")
+
+            if not next_href or f"type=1" not in next_href:
+                print("No more pages for table 2.")
+                break
+
+            page_offset += items_per_page
+
+        except Exception as e:
+            print("Next button not found or error while navigating:", e)
+            break
+
+    driver.quit()
+    return results
+
 # --- Execution ---
 if __name__ == "__main__":
     scraped_data = scrape_shl_table_data_selenium(CATALOG_URL)
