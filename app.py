@@ -22,13 +22,25 @@ def home():
     return "SHL Assessment Recommender API is running."
 
 @app.route("/recommend", methods=["POST"])
-def recommend():
+def recommend_post():
     data = request.get_json()
     query = data.get("query", "")
 
     if not query:
         return jsonify({"error": "Query not provided."}), 400
 
+    return run_recommendation(query)
+
+@app.route("/recommend", methods=["GET"])
+def recommend_get():
+    query = request.args.get("query", "")
+
+    if not query:
+        return jsonify({"error": "Query parameter is required."}), 400
+
+    return run_recommendation(query)
+
+def run_recommendation(query):
     # Compute the embedding of the input query
     query_embedding = model.encode([query])
     query_embedding = np.array(query_embedding).astype("float32")
